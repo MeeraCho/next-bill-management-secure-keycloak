@@ -6,7 +6,6 @@ import { useRouter } from 'next/router';
 
 import '../app/globals.css';
 import AuthStatus from "@/components/authStatus";
-import { ERROR_TYPES } from '@/constants/errors';
 
 interface DecodedToken {
     realm_access?: {
@@ -43,8 +42,6 @@ export default function Home() {
     const [bills, setBills] = useState<Bill[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [editingBill, setEditingBill] = useState<Bill | null>(null);
-    const [userRoles, setUserRoles] = useState<string[]>([]);
-    const [userUpn, setUserUpn] = useState<string>('');
     const [newBill, setNewBill] = useState<Bill>({
         id: 0,
         payeeName: '',
@@ -53,12 +50,12 @@ export default function Home() {
         paid: false,
         createdBy: ''
     });
+    const [userRoles, setUserRoles] = useState<string[]>([]);
 
     useEffect(() => {
         if (session?.accessToken) {
             const decodedToken = jwtDecode<DecodedToken>(session.accessToken as string);
             setUserRoles(decodedToken.realm_access?.roles || []);
-            setUserUpn(decodedToken.preferred_username || decodedToken.email || decodedToken.upn || '');
             fetchBills();
         }
     }, [session]);
@@ -91,12 +88,7 @@ export default function Home() {
             }
 
             const data = await response.json();
-            if (!Array.isArray(data)) {
-                console.error('Unexpected data format:', data);
-                router.push('/500');
-                return;
-            }
-            setBills(data);
+            setBills(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Error fetching bills:', error);
             router.push('/500');
@@ -105,11 +97,6 @@ export default function Home() {
 
     // Add a new bill
     const handleAddBill = async () => {
-        if (!canEdit) {
-            router.push('/403');
-            return;
-        }
-
         if (newBill.payeeName && newBill.dueDate && newBill.paymentDue) {
             try {
                 const response = await fetch('/api/bills', {
@@ -176,17 +163,17 @@ export default function Home() {
             });
 
             if (response.status === 401) {
-                router.push('/error/401');
+                router.push('/401');
                 return;
             }
             
             if (response.status === 403) {
-                router.push('/error/403');
+                router.push('/403');
                 return;
             }
 
             if (!response.ok) {
-                router.push('/error/500');
+                router.push('/500');
                 return;
             }
 
@@ -196,30 +183,14 @@ export default function Home() {
                     bill.id === editingBill.id ? data : bill
                 )
             );
-
-            // Close the edit form
-            setEditingBill(null); 
-            
-            // Refresh the bills after update
+            setEditingBill(null);
             fetchBills();
         } catch (error) {
             console.error('Error updating bill:', error);
-            router.push('/error/500');
+            router.push('/500');
         }
     };
 
-    // Handle changes in the edit form
-    const handleBillChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (editingBill) {
-            const { name, value, type, checked } = e.target;
-            setEditingBill({
-                ...editingBill,
-                [name]: type === 'checkbox' ? checked : value,
-            });
-        }
-    };
-
-    // delete a bill
     const handleDeleteBill = async (id: number) => {
         try {
             const response = await fetch(`/api/bills/${id}`, {
@@ -230,24 +201,24 @@ export default function Home() {
             });
 
             if (response.status === 401) {
-                router.push('/error/401');
+                router.push('/401');
                 return;
             }
             
             if (response.status === 403) {
-                router.push('/error/403');
+                router.push('/403');
                 return;
             }
 
             if (!response.ok) {
-                router.push('/error/500');
+                router.push('/500');
                 return;
             }
 
             setBills((prevBills) => prevBills.filter((bill) => bill.id !== id));
         } catch (error) {
             console.error('Error deleting bill:', error);
-            router.push('/error/500');
+            router.push('/500');
         }
     };
 
@@ -343,7 +314,12 @@ export default function Home() {
                                     type="text"
                                     name="payeeName"
                                     value={editingBill.payeeName}
-                                    onChange={handleBillChange}
+                                    onChange={(e) =>
+                                        setEditingBill({
+                                            ...editingBill,
+                                            payeeName: e.target.value,
+                                        })
+                                    }
                                     className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
                                 />
                             </div>
@@ -361,7 +337,12 @@ export default function Home() {
                                                 .split('T')[0]
                                             : ''
                                     }
-                                    onChange={handleBillChange}
+                                    onChange={(e) =>
+                                        setEditingBill({
+                                            ...editingBill,
+                                            dueDate: e.target.value,
+                                        })
+                                    }
                                     className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
                                 />
                             </div>
@@ -373,7 +354,12 @@ export default function Home() {
                                     type="number"
                                     name="paymentDue"
                                     value={editingBill.paymentDue}
-                                    onChange={handleBillChange}
+                                    onChange={(e) =>
+                                        setEditingBill({
+                                            ...editingBill,
+                                            paymentDue: parseFloat(e.target.value),
+                                        })
+                                    }
                                     className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
                                 />
                             </div>
@@ -383,7 +369,12 @@ export default function Home() {
                                     type="checkbox"
                                     name="paid"
                                     checked={editingBill.paid}
-                                    onChange={handleBillChange}
+                                    onChange={(e) =>
+                                        setEditingBill({
+                                            ...editingBill,
+                                            paid: e.target.checked,
+                                        })
+                                    }
                                     className="mt-2"
                                 />
                             </div>
