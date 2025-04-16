@@ -11,6 +11,8 @@ interface DecodedToken {
     realm_access?: {
         roles?: string[];
     };
+    preferred_username?: string;
+    email?: string;
     upn?: string;
     [key: string]: unknown;
 }
@@ -25,8 +27,13 @@ export default async function handler(
     }
 
     const decodedToken = jwtDecode<DecodedToken>(session.accessToken as string);
+    console.log('Decoded Token:', decodedToken);
+
     const roles = decodedToken.realm_access?.roles || [];
-    const userUpn = decodedToken.upn;
+    
+    const userUpn = decodedToken.preferred_username || decodedToken.email || decodedToken.upn;
+    console.log('User Identifier:', userUpn);
+    console.log('Roles:', roles);
 
     if (!userUpn && roles.includes('ActiveStudent')) {
         return res.status(403).json({ message: 'User identifier not found' });
@@ -43,9 +50,13 @@ export default async function handler(
                 params.push(userUpn);
             }
 
+            console.log('SQL Query:', query);
+            console.log('Query Parameters:', params);
+
             const [rows] = await promisePool.query(query, params);
             res.status(200).json(rows);
         } catch (error) {
+            console.error('Database Error:', error);
             res.status(500).json({ message: 'Database error', error });
         }
     }
