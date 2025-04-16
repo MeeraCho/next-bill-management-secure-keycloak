@@ -3,6 +3,8 @@ import { ResultSetHeader } from 'mysql2';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jwtDecode }  from 'jwt-decode';
 import {getSession} from "next-auth/react";
+import {getServerSession} from "next-auth";
+import {authOptions} from "@/pages/api/auth/[...nextauth]";
 
 
 interface DecodedToken {
@@ -25,6 +27,7 @@ export default async function handler(
     const decodedToken = jwtDecode<DecodedToken>(session.accessToken as string);
     const roles = decodedToken.realm_access?.roles || [];
     const userUpn = decodedToken.upn ?? '';
+
 
     if (req.method === 'GET') {
         try {
