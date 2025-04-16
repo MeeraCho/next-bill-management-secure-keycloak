@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useSession, signIn, signOut} from "next-auth/react";
 import {jwtDecode} from "jwt-decode";
+import { useRouter } from 'next/router';
 
 import '../app/globals.css';
 import AuthStatus from "@/components/authStatus";
@@ -47,8 +48,7 @@ export default function Home() {
         createdBy: ''
     });
     const [userRoles, setUserRoles] = useState<string[]>([]);
-
-
+    const router = useRouter();
 
     useEffect(() => {
         if (session?.accessToken) {
@@ -70,23 +70,38 @@ export default function Home() {
                 }
             });
 
+            if (response.status === 401) {
+                router.push('/error/401');
+                return;
+            }
+            
+            if (response.status === 403) {
+                router.push('/error/403');
+                return;
+            }
+
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Failed response body:', errorText);
-                throw new Error(`Failed to fetch bills: ${response.status}`);
+                router.push('/error/500');
+                return;
             }
 
             const data = await response.json();
-            setBills(Array.isArray(data) ? data : []);
+            if (!Array.isArray(data)) {
+                console.error('Unexpected data format:', data);
+                router.push('/error/500');
+                return;
+            }
+            setBills(data);
         } catch (error) {
             console.error('Error fetching bills:', error);
+            router.push('/error/500');
         }
     };
 
     // Add a new bill
     const handleAddBill = async () => {
         if (newBill.payeeName && newBill.dueDate && newBill.paymentDue) {
-            try{
+            try {
                 const response = await fetch('/api/bills', {
                     method: 'POST',
                     headers: {
@@ -95,6 +110,21 @@ export default function Home() {
                     },
                     body: JSON.stringify(newBill),
                 });
+
+                if (response.status === 401) {
+                    router.push('/error/401');
+                    return;
+                }
+                
+                if (response.status === 403) {
+                    router.push('/error/403');
+                    return;
+                }
+
+                if (!response.ok) {
+                    router.push('/error/500');
+                    return;
+                }
 
                 const data = await response.json();
                 setBills((prevBills) => [...prevBills, data]);
@@ -108,8 +138,8 @@ export default function Home() {
                 });
             } catch (error) {
                 console.error('Error adding bill:', error);
+                router.push('/error/500');
             }
-            // Reset the form after adding
         }
     };
 
@@ -135,8 +165,19 @@ export default function Home() {
                 body: JSON.stringify(editingBill),
             });
 
+            if (response.status === 401) {
+                router.push('/error/401');
+                return;
+            }
+            
+            if (response.status === 403) {
+                router.push('/error/403');
+                return;
+            }
+
             if (!response.ok) {
-                throw new Error('Failed to update bill');
+                router.push('/error/500');
+                return;
             }
 
             const data = await response.json();
@@ -153,6 +194,7 @@ export default function Home() {
             fetchBills();
         } catch (error) {
             console.error('Error updating bill:', error);
+            router.push('/error/500');
         }
     };
 
@@ -177,13 +219,25 @@ export default function Home() {
                 },
             });
 
+            if (response.status === 401) {
+                router.push('/error/401');
+                return;
+            }
+            
+            if (response.status === 403) {
+                router.push('/error/403');
+                return;
+            }
+
             if (!response.ok) {
-                throw new Error('Failed to delete bill');
+                router.push('/error/500');
+                return;
             }
 
             setBills((prevBills) => prevBills.filter((bill) => bill.id !== id));
         } catch (error) {
             console.error('Error deleting bill:', error);
+            router.push('/error/500');
         }
     };
 
