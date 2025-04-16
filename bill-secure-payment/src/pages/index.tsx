@@ -154,9 +154,14 @@ export default function Home() {
 
     // Open the bill in edit mode
     const handleEditClick = (bill: Bill) => {
+        if (!canEdit) {
+            router.push('/403');
+            return;
+        }
         setEditingBill(bill);
     };
 
+    // Edit 취소 처리
     const handleCancelEdit = () => {
         setEditingBill(null);
     };
@@ -165,45 +170,42 @@ export default function Home() {
         if (!editingBill) return;
 
         try {
+            // 날짜 형식 처리
+            const formattedBill = {
+                ...editingBill,
+                dueDate: editingBill.dueDate ? new Date(editingBill.dueDate).toISOString().split('T')[0] : '',
+            };
+
             const response = await fetch(`/api/bills/${editingBill.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${session?.accessToken}`,
                 },
-                body: JSON.stringify(editingBill),
+                body: JSON.stringify(formattedBill),
             });
 
             if (response.status === 401) {
-                router.push('/error/401');
+                router.push('/401');
                 return;
             }
             
             if (response.status === 403) {
-                router.push('/error/403');
+                router.push('/403');
                 return;
             }
 
             if (!response.ok) {
-                router.push('/error/500');
+                router.push('/500');
                 return;
             }
 
-            const data = await response.json();
-            setBills((prevBills) =>
-                prevBills.map((bill) =>
-                    bill.id === editingBill.id ? data : bill
-                )
-            );
-
-            // Close the edit form
-            setEditingBill(null); 
-            
-            // Refresh the bills after update
-            fetchBills();
+            // 성공적으로 수정된 경우
+            setEditingBill(null);
+            await fetchBills(); // 목록 새로고침
         } catch (error) {
             console.error('Error updating bill:', error);
-            router.push('/error/500');
+            router.push('/500');
         }
     };
 
@@ -327,147 +329,135 @@ export default function Home() {
                 </div>
             )}
 
-
-            {/* Edit Bill Form */}
-            {editingBill ? (
-                <div className="p-6 bg-gray-50 border border-gray-300 rounded-lg shadow-md">
-                    <h2 className="text-xl font-medium mb-4">Edit Bill</h2>
-                    <form onSubmit={(e) => e.preventDefault()}>
-                        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+            {/* Edit 모달/폼 */}
+            {editingBill && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div className="bg-white p-6 rounded-lg shadow-lg">
+                        <h2 className="text-xl font-bold mb-4">Edit Bill</h2>
+                        <div className="space-y-4">
                             <div>
-                                <label className="block text-sm">
-                                    Payee Name
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700">Payee Name</label>
                                 <input
                                     type="text"
                                     name="payeeName"
                                     value={editingBill.payeeName}
-                                    onChange={handleBillChange}
-                                    className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    onChange={(e) => setEditingBill({
+                                        ...editingBill,
+                                        payeeName: e.target.value
+                                    })}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm">
-                                    Due Date
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700">Due Date</label>
                                 <input
                                     type="date"
                                     name="dueDate"
-                                    value={
-                                        editingBill.dueDate
-                                            ? new Date(editingBill.dueDate)
-                                                .toISOString()
-                                                .split('T')[0]
-                                            : ''
-                                    }
-                                    onChange={handleBillChange}
-                                    className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    value={editingBill.dueDate}
+                                    onChange={(e) => setEditingBill({
+                                        ...editingBill,
+                                        dueDate: e.target.value
+                                    })}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm">
-                                    Payment Due
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700">Payment Due</label>
                                 <input
                                     type="number"
                                     name="paymentDue"
                                     value={editingBill.paymentDue}
-                                    onChange={handleBillChange}
-                                    className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    onChange={(e) => setEditingBill({
+                                        ...editingBill,
+                                        paymentDue: Number(e.target.value)
+                                    })}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm">Paid</label>
-                                <input
-                                    type="checkbox"
-                                    name="paid"
-                                    checked={editingBill.paid}
-                                    onChange={handleBillChange}
-                                    className="mt-2"
-                                />
+                                <label className="block text-sm font-medium text-gray-700">
+                                    <input
+                                        type="checkbox"
+                                        name="paid"
+                                        checked={editingBill.paid}
+                                        onChange={(e) => setEditingBill({
+                                            ...editingBill,
+                                            paid: e.target.checked
+                                        })}
+                                        className="mr-2"
+                                    />
+                                    Paid
+                                </label>
                             </div>
                         </div>
-                        <div className="mt-6 flex justify-end gap-4">
+                        <div className="mt-6 flex justify-end space-x-3">
                             <button
-                                type="button"
-                                onClick={handleEditBill}
-                                className="bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 transition duration-300"
-                            >
-                                Save Changes
-                            </button>
-                            <button
-                                type="button"
                                 onClick={handleCancelEdit}
-                                className="bg-gray-500 text-white p-3 rounded-md hover:bg-gray-600 transition duration-300"
+                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
                             >
                                 Cancel
                             </button>
+                            <button
+                                onClick={handleEditBill}
+                                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                            >
+                                Save Changes
+                            </button>
                         </div>
-                    </form>
+                    </div>
                 </div>
-            ) : (
-                <table className="min-w-full mt-8 bg-white shadow-md rounded-lg">
-                    <thead className="bg-gray-200">
-                        <tr>
-                            <th className="py-3 px-4 text-left">ID</th>
-                            <th className="py-3 px-4 text-left">Payee Name</th>
-                            <th className="py-3 px-4 text-left">Due Date</th>
-                            <th className="py-3 px-4 text-left">Payment Due</th>
-                            <th className="py-3 px-4 text-left">Paid</th>
-                            <th className="py-3 px-4">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredBills.length > 0 ? (
-                            filteredBills.map((bill) => (
-                                <tr key={bill.id} className="border-t">
-                                    <td className="py-3 px-4">{bill.id}</td>
-                                    <td className="py-3 px-4">
-                                        {bill.payeeName}
-                                    </td>
-                                    <td className="py-3 px-4">
-                                        {formatDate(bill.dueDate)}
-                                    </td>
-                                    <td className="py-3 px-4">
-                                        {bill.paymentDue}
-                                    </td>
-                                    <td className="py-3 px-4">
-                                        {bill.paid ? '✅' : '❌'}
-                                    </td>
-                                    <td className="py-3 px-4 flex justify-center gap-2">
-                                        {(bill.createdBy === userUpn || isAccounting) && (
-                                            <>
-                                                <button
-                                                    onClick={() =>
-                                                        handleEditClick(bill)
-                                                    }
-                                                    className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition duration-300"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() =>
-                                                        handleDeleteBill(bill.id)
-                                                    }
-                                                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan={6} className="text-center py-4">
-                                    No bills found
+            )}
+
+            {/* Bills 테이블 */}
+            <table className="min-w-full mt-8 bg-white shadow-md rounded-lg">
+                <thead className="bg-gray-200">
+                    <tr>
+                        <th className="py-3 px-4 text-left">ID</th>
+                        <th className="py-3 px-4 text-left">Payee Name</th>
+                        <th className="py-3 px-4 text-left">Due Date</th>
+                        <th className="py-3 px-4 text-left">Payment Due</th>
+                        <th className="py-3 px-4 text-left">Paid</th>
+                        <th className="py-3 px-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {filteredBills.length > 0 ? (
+                        filteredBills.map((bill) => (
+                            <tr key={bill.id} className="border-b">
+                                <td className="py-3 px-4">{bill.id}</td>
+                                <td className="py-3 px-4">{bill.payeeName}</td>
+                                <td className="py-3 px-4">{bill.dueDate}</td>
+                                <td className="py-3 px-4">{bill.paymentDue}</td>
+                                <td className="py-3 px-4">{bill.paid ? 'Yes' : 'No'}</td>
+                                <td className="py-3 px-4">
+                                    {(bill.createdBy === userUpn || isAccounting) && (
+                                        <div className="flex space-x-2">
+                                            <button
+                                                onClick={() => handleEditClick(bill)}
+                                                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteBill(bill.id)}
+                                                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    )}
                                 </td>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
-            )}
+                        ))
+                    ) : (
+                        <tr>
+                            <td colSpan={6} className="text-center py-4">
+                                No bills found
+                            </td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
         </div>
     );
 }
