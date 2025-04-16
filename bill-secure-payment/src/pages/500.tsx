@@ -18,4 +18,4 @@ export default function ServerError() {
             </div>
         </div>
     );
-} 
+}

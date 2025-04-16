@@ -85,7 +85,7 @@ export default function Home() {
             }
 
             if (response.status === 404) {
-                router.push('/403');
+                router.push('/404');
                 return;
             }
 
@@ -260,51 +260,49 @@ export default function Home() {
             </div>
 
             {/* Add new bill form */}
-            {canEdit && (
-                <div className="mb-8 p-6 bg-gray-50 border border-gray-300 rounded-lg shadow-md">
-                    <h2 className="text-xl font-medium mb-4">Add New Bill</h2>
-                    <div className="grid gap-4 grid-cols-1 md:grid-cols-4">
-                        <input
-                            type="text"
-                            placeholder="Payee Name"
-                            value={newBill.payeeName}
-                            onChange={(e) =>
-                                setNewBill({
-                                    ...newBill,
-                                    payeeName: e.target.value,
-                                })
-                            }
-                            className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 col-span-1"
-                        />
-                        <input
-                            type="date"
-                            value={newBill.dueDate}
-                            onChange={(e) =>
-                                setNewBill({ ...newBill, dueDate: e.target.value })
-                            }
-                            className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 col-span-1"
-                        />
-                        <input
-                            type="number"
-                            placeholder="Payment Due"
-                            value={newBill.paymentDue}
-                            onChange={(e) =>
-                                setNewBill({
-                                    ...newBill,
-                                    paymentDue: parseFloat(e.target.value),
-                                })
-                            }
-                            className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 col-span-1"
-                        />
-                        <button
-                            onClick={handleAddBill}
-                            className="p-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300 col-span-1"
-                        >
-                            Add Bill
-                        </button>
-                    </div>
+            <div className="mb-8 p-6 bg-gray-50 border border-gray-300 rounded-lg shadow-md">
+                <h2 className="text-xl font-medium mb-4">Add New Bill</h2>
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-4">
+                    <input
+                        type="text"
+                        placeholder="Payee Name"
+                        value={newBill.payeeName}
+                        onChange={(e) =>
+                            setNewBill({
+                                ...newBill,
+                                payeeName: e.target.value,
+                            })
+                        }
+                        className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 col-span-1"
+                    />
+                    <input
+                        type="date"
+                        value={newBill.dueDate}
+                        onChange={(e) =>
+                            setNewBill({ ...newBill, dueDate: e.target.value })
+                        }
+                        className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 col-span-1"
+                    />
+                    <input
+                        type="number"
+                        placeholder="Payment Due"
+                        value={newBill.paymentDue}
+                        onChange={(e) =>
+                            setNewBill({
+                                ...newBill,
+                                paymentDue: parseFloat(e.target.value),
+                            })
+                        }
+                        className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 col-span-1"
+                    />
+                    <button
+                        onClick={handleAddBill}
+                        className="p-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300 col-span-1"
+                    >
+                        Add Bill
+                    </button>
                 </div>
-            )}
+            </div>
 
 
             {/* Edit Bill Form */}
