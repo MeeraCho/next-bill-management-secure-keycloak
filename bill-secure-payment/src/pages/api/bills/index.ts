@@ -1,8 +1,8 @@
 import { promisePool } from '@/lib/mysql';
 import { ResultSetHeader } from 'mysql2';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getToken } from 'next-auth/jwt';
 import { jwtDecode }  from 'jwt-decode';
+import {getSession} from "next-auth/react";
 
 
 interface DecodedToken {
@@ -17,12 +17,12 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    const token = await getToken({ req });
-    if (!token) {
+    const session = await getSession({ req });
+    if (!session?.accessToken) {
         return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const decodedToken = jwtDecode<DecodedToken>(token.accessToken as string);
+    const decodedToken = jwtDecode<DecodedToken>(session.accessToken as string);
     const roles = decodedToken.realm_access?.roles || [];
     const userUpn = decodedToken.upn ?? '';
 

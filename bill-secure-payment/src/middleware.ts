@@ -1,6 +1,6 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
+import { jwtVerify, createRemoteJWKSet } from 'jose';
 import {jwtDecode} from "jwt-decode";
 
 interface DecodedToken {
@@ -22,12 +22,21 @@ export default withAuth(
         }
 
         try {
+            //
+            const JWKS = createRemoteJWKSet(
+                new URL('http://localhost:8180/realms/dmit2015-realm/protocol/openid-connect/certs')
+            );
             // Decode JWT to get roles
-            const decodedToken = await jwtVerify(token.accessToken as string, new TextEncoder().encode(process.env.KEYCLOAK_CLIENT_SECRET!));
+            const decodedToken = await jwtVerify(token.accessToken as string, JWKS);
+            const payload = decodedToken.payload as DecodedToken;
+
+
+
+            //const decodedToken = await jwtVerify(token.accessToken as string, new TextEncoder().encode(process.env.KEYCLOAK_CLIENT_SECRET!));
 
             // assign decodedToken.payload as DecodedToken type
-            const roles = (decodedToken.payload as DecodedToken).realm_access?.roles || [];
-
+            // const roles = (decodedToken.payload as DecodedToken).realm_access?.roles || [];
+            const roles = (payload as DecodedToken).realm_access?.roles || [];
             // Check permissions based on the route
             const path = req.nextUrl.pathname;
 

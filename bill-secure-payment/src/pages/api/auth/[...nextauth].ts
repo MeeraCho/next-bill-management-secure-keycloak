@@ -48,7 +48,8 @@ export const authOptions: NextAuthOptions = {
                     accessToken: typedAccount.access_token,
                     refreshToken: typedAccount.refresh_token,
                     idToken: typedAccount.id_token,
-                    expiresAt: typedAccount.expires_at * 1000  // Convert to milliseconds
+                    expiresAt: typedAccount.expires_at * 1000, // Convert to milliseconds
+
                 };
             }
 
@@ -62,6 +63,16 @@ export const authOptions: NextAuthOptions = {
         },
         async session({ session, token }) {
             const typedToken = token as Token;
+
+            // let roles: string[] = [];
+            // if (typedToken.accessToken) {
+            //     try {
+            //         const decoded = jwtDecode<DecodedAccessToken>(typedToken.accessToken);
+            //         roles = decoded?.realm_access?.roles || [];
+            //     } catch (error) {
+            //         console.error('Failed to decode access token:', error);
+            //     }
+            // }
 
             let roles: string[] = [];
             if (typedToken.accessToken) {
@@ -83,8 +94,8 @@ export const authOptions: NextAuthOptions = {
         },
     },
     pages: {
-        signIn: '/auth/signin',
-        signOut: '/auth/signout',
+        signIn: 'auth/login',
+        signOut: '/auth/logout',
         error: '/auth/error',
     },
 };

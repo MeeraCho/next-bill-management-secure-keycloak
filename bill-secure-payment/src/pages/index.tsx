@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react';
 import { useSession, signIn, signOut} from "next-auth/react";
 import {jwtDecode} from "jwt-decode";
 
+
 import '../app/globals.css';
+import AuthStatus from "@/components/authStatus";
 
 interface DecodedToken {
     realm_access?: {
@@ -60,23 +62,6 @@ export default function Home() {
     // Add role-based rendering
     const canEdit = userRoles.includes('ActiveStudent');
     const isAccounting = userRoles.includes('Accounting');
-
-    // if (status === 'loading') {
-    //     return <div className="flex justify-center items-center h-screen">Loading...</div>;
-    // }
-
-    if (!session) {
-        return (
-            <div className="flex justify-center items-center h-screen">
-                <button
-                    onClick={() => signIn('keycloak')}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700"
-                >
-                    Sign in with Keycloak
-                </button>
-            </div>
-        );
-    }
 
     const fetchBills = async () => {
         try {
@@ -213,22 +198,14 @@ export default function Home() {
     return (
         <div className="p-8 max-w-5xl mx-auto">
 
-            <h1 className="text-3xl font-semibold text-center mb-8">
-                Bill List
-            </h1>
-            <div className="flex items-center gap-4">
-                    <span className="text-sm text-gray-600">
-                        Role: {isAccounting ? 'Accounting' : 'Active Student'}
-                    </span>
-                <button
-                    onClick={() => signOut()}
-                    className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
-                >
-                    Sign Out
-                </button>
+            {/* Title and Sign Out */}
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-semibold">
+                    Bill List
+                </h1>
+
+                <AuthStatus />
             </div>
-
-
 
             {/* Search bar */}
             <div className="mb-6 flex justify-center">

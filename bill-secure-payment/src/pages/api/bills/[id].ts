@@ -1,8 +1,8 @@
 import { promisePool } from '@/lib/mysql';
 import { RowDataPacket } from 'mysql2';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getToken } from 'next-auth/jwt';
 import { jwtDecode }  from 'jwt-decode';
+import { getSession } from "next-auth/react";
 
 interface DecodedToken {
     realm_access?: {
@@ -16,13 +16,13 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    const token = await getToken({ req });
+    const session = await getSession({ req });
 
-    if (!token) {
+    if (!session?.accessToken) {
         return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const decodedToken = jwtDecode<DecodedToken>(token.accessToken as string);
+    const decodedToken = jwtDecode<DecodedToken>(session.accessToken as string);
     const roles = decodedToken.realm_access?.roles || [];
     const userUpn = decodedToken.upn as string;
 
@@ -73,7 +73,7 @@ export default async function handler(
 
         try {
             await promisePool.query(
-                'DELETE FROM BillDtos WHERE id=? AND payeeName=?',
+                'DELETE FROM BillDtos WHERE id=? AND createdBy=?',
                 [id, userUpn]
             );
             res.status(200).json({ message: 'Bill deleted successfully' });
