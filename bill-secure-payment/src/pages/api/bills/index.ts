@@ -20,6 +20,7 @@ export default async function handler(
     res: NextApiResponse
 ) {
     const session = await getSession({ req });
+
     if (!session?.accessToken) {
         return res.status(401).json({ message: 'Unauthorized' });
     }
@@ -29,13 +30,19 @@ export default async function handler(
     const userUpn = decodedToken.upn ?? '';
 
 
+
     if (req.method === 'GET') {
         try {
             let query = 'SELECT * FROM BillDtos';
             const params = [];
 
+            // If user is Accounting, show all bills
+            if (roles.includes('Accounting')) {
+                query;
+            }
+
             // If user is ActiveStudent, only show their bills
-            if (roles.includes('ActiveStudent') && !roles.includes('Accounting')) {
+            if (roles.includes('ActiveStudent')) {
                 query += ' WHERE createdBy = ?';
                 params.push(userUpn);
             }

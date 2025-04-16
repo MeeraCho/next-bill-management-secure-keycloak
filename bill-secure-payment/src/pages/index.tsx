@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { useSession, signIn, signOut} from "next-auth/react";
 import {jwtDecode} from "jwt-decode";
 
-
 import '../app/globals.css';
 import AuthStatus from "@/components/authStatus";
 
