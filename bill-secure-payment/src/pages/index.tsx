@@ -42,6 +42,8 @@ export default function Home() {
     const [bills, setBills] = useState<Bill[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [editingBill, setEditingBill] = useState<Bill | null>(null);
+    const [userRoles, setUserRoles] = useState<string[]>([]);
+    const [userUpn, setUserUpn] = useState<string>('');
     const [newBill, setNewBill] = useState<Bill>({
         id: 0,
         payeeName: '',
@@ -50,12 +52,12 @@ export default function Home() {
         paid: false,
         createdBy: ''
     });
-    const [userRoles, setUserRoles] = useState<string[]>([]);
 
     useEffect(() => {
         if (session?.accessToken) {
             const decodedToken = jwtDecode<DecodedToken>(session.accessToken as string);
             setUserRoles(decodedToken.realm_access?.roles || []);
+            setUserUpn(decodedToken.preferred_username || decodedToken.email || decodedToken.upn || '');
             fetchBills();
         }
     }, [session]);
@@ -78,6 +80,11 @@ export default function Home() {
             }
             
             if (response.status === 403) {
+                router.push('/403');
+                return;
+            }
+
+            if (response.status === 404) {
                 router.push('/403');
                 return;
             }
