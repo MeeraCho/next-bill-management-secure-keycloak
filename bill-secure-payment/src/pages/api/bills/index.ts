@@ -44,7 +44,6 @@ export default async function handler(
             let query = 'SELECT * FROM BillDtos';
             const params = [];
 
-            // If user is ActiveStudent, only show their bills
             if (roles.includes('ActiveStudent') && !roles.includes('Accounting')) {
                 query += ' WHERE createdBy = ?';
                 params.push(userUpn);

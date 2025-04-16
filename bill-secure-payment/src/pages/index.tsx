@@ -100,6 +100,11 @@ export default function Home() {
 
     // Add a new bill
     const handleAddBill = async () => {
+        if (!canEdit) {
+            router.push('/403');
+            return;
+        }
+
         if (newBill.payeeName && newBill.dueDate && newBill.paymentDue) {
             try {
                 const response = await fetch('/api/bills', {
@@ -112,17 +117,17 @@ export default function Home() {
                 });
 
                 if (response.status === 401) {
-                    router.push('/error/401');
+                    router.push('/401');
                     return;
                 }
                 
                 if (response.status === 403) {
-                    router.push('/error/403');
+                    router.push('/403');
                     return;
                 }
 
                 if (!response.ok) {
-                    router.push('/error/500');
+                    router.push('/500');
                     return;
                 }
 
@@ -138,7 +143,7 @@ export default function Home() {
                 });
             } catch (error) {
                 console.error('Error adding bill:', error);
-                router.push('/error/500');
+                router.push('/500');
             }
         }
     };
@@ -426,22 +431,26 @@ export default function Home() {
                                         {bill.paid ? '✅' : '❌'}
                                     </td>
                                     <td className="py-3 px-4 flex justify-center gap-2">
-                                        <button
-                                            onClick={() =>
-                                                handleEditClick(bill)
-                                            }
-                                            className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition duration-300"
-                                        >
-                                            Edit
-                                        </button>
-                                        <button
-                                            onClick={() =>
-                                                handleDeleteBill(bill.id)
-                                            }
-                                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300"
-                                        >
-                                            Delete
-                                        </button>
+                                        {(bill.createdBy === userUpn || isAccounting) && (
+                                            <>
+                                                <button
+                                                    onClick={() =>
+                                                        handleEditClick(bill)
+                                                    }
+                                                    className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition duration-300"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    onClick={() =>
+                                                        handleDeleteBill(bill.id)
+                                                    }
+                                                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </>
+                                        )}
                                     </td>
                                 </tr>
                             ))
