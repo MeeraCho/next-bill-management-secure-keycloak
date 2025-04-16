@@ -1,6 +1,6 @@
 import ErrorPage from '@/components/ErrorPage';
 import { ERROR_TYPES } from '@/constants/errors';
 
-export default function ServerError() {
-    return <ErrorPage {...ERROR_TYPES.SERVER_ERROR} />;
+export default function NotFoundError() {
+    return <ErrorPage {...ERROR_TYPES.NOT_FOUND} />;
 } 
